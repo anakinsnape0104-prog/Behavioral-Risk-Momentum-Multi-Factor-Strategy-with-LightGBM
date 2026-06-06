@@ -1,23 +1,34 @@
-# HS300 LightGBM Multi-Factor Stock Selection Strategy
+# Machine Learning Enhanced Multi-Factor Equity Strategy (CSI 300)
 
-A machine learning enhanced multi-factor stock selection strategy for the CSI 300 Index universe, combining LightGBM prediction, technical factors, momentum signals, and trend-based risk control.
+A quantitative stock selection strategy that combines behavioral finance factors, risk factors, and momentum factors with LightGBM forecasting to construct an adaptive equity portfolio within the CSI 300 universe.
 
-## Overview
+---
 
-This project implements a quantitative equity strategy based on the CSI 300 constituents. The strategy uses multiple technical and behavioral factors as inputs and trains a LightGBM regression model to predict future 20-day excess returns.
+## Project Overview
 
-The final portfolio is constructed by ranking stocks according to predicted scores and selecting the top-ranked candidates while applying market trend filters and stop-loss risk management.
+This project develops a machine learning-enhanced multi-factor investment strategy based on constituents of the CSI 300 Index.
 
-### Key Features
+Instead of relying solely on traditional momentum indicators, the strategy integrates:
 
-* CSI 300 constituent universe
-* Multi-factor stock selection
-* LightGBM regression model
-* Excess return prediction framework
-* Dynamic model retraining
-* Trend-following market timing
-* Equal-weight portfolio construction
-* Individual stock stop-loss control
+* Investor sentiment signals
+* Risk-adjusted performance measures
+* Trend-following momentum factors
+* LightGBM return forecasting
+* Market regime risk control
+
+The objective is to identify stocks with superior future excess returns while maintaining robust risk management under different market environments.
+
+---
+
+## Research Motivation
+
+Traditional factor investing often suffers from:
+
+* Limited ability to model nonlinear relationships
+* Information overlap among factors
+* Weak adaptability across market regimes
+
+To address these challenges, this project constructs a compact and diversified factor library and employs a LightGBM regression model to capture nonlinear interactions between factors and future stock performance.
 
 ---
 
@@ -31,12 +42,15 @@ Universe Filtering
 (ST, Suspended, Newly Listed Stocks Removed)
         │
         ▼
-Factor Extraction
-(11 Technical & Behavioral Factors)
+Factor Construction
+(Sentiment + Risk + Momentum)
         │
         ▼
-LightGBM Model Training
-(Predict Future 20-Day Excess Return)
+Cross-Sectional Standardization
+        │
+        ▼
+LightGBM Forecasting
+(Future 20-Day Excess Return)
         │
         ▼
 Score Generation
@@ -48,7 +62,6 @@ Top 18 Stock Selection
         │
         ▼
 Market Trend Risk Control
-(MA60 / MA120 Based Exposure Adjustment)
         │
         ▼
 Portfolio Rebalancing
@@ -56,23 +69,41 @@ Portfolio Rebalancing
 
 ---
 
-## Factors Used
+## Factor Design
 
-The strategy incorporates 11 factors available from JoinQuant:
+The factor library follows the principle of maximizing information diversity while minimizing redundancy.
 
-| Factor                    | Description                         |
-| ------------------------- | ----------------------------------- |
-| PSY                       | Psychological Line Indicator        |
-| VR                        | Volume Ratio                        |
-| DAVOL5                    | 5-Day Relative Volume               |
-| VROC12                    | Volume Rate of Change               |
-| ARBR                      | ARBR Sentiment Indicator            |
-| Variance20                | 20-Day Volatility                   |
-| sharpe_ratio_60           | 60-Day Sharpe Ratio                 |
-| Skewness60                | 60-Day Return Skewness              |
-| ROC20                     | 20-Day Rate of Change               |
-| PLRC24                    | Price Linear Regression Coefficient |
-| fifty_two_week_close_rank | 52-Week Price Ranking               |
+### Sentiment Factors
+
+These factors capture investor behavior, trading enthusiasm, and short-term market sentiment.
+
+| Factor | Description                                    |
+| ------ | ---------------------------------------------- |
+| PSY    | Psychological Line Indicator                   |
+| VR     | Volume Ratio                                   |
+| DAVOL5 | Relative Turnover Activity                     |
+| VROC12 | Volume Rate of Change                          |
+| ARBR   | Composite Popularity and Willingness Indicator |
+
+### Risk Factors
+
+These factors measure different dimensions of return uncertainty and risk-adjusted performance.
+
+| Factor          | Description            |
+| --------------- | ---------------------- |
+| Variance20      | 20-Day Volatility      |
+| sharpe_ratio_60 | 60-Day Sharpe Ratio    |
+| Skewness60      | 60-Day Return Skewness |
+
+### Momentum Factors
+
+These factors capture medium- and long-term price trends.
+
+| Factor                    | Description                     |
+| ------------------------- | ------------------------------- |
+| ROC20                     | 20-Day Price Momentum           |
+| PLRC24                    | 24-Day Linear Trend Slope       |
+| fifty_two_week_close_rank | 52-Week Relative Price Position |
 
 ---
 
@@ -84,103 +115,116 @@ LightGBM Regressor
 
 ### Prediction Target
 
-Future 20-day excess return:
+The model predicts future 20-day excess return:
 
-```text
-Stock Return (t → t+20)
-−
-CSI300 Return (t → t+20)
-```
+Future Stock Return − Future CSI300 Return
 
 ### Training Configuration
 
-| Parameter            | Value            |
-| -------------------- | ---------------- |
-| Training Window      | 120 Trading Days |
-| Prediction Horizon   | 20 Trading Days  |
-| Retraining Frequency | Every 5 Days     |
-| Learning Rate        | 0.04             |
-| Max Depth            | 6                |
-| Num Leaves           | 63               |
-| Boosting Rounds      | 80               |
-
----
-
-## Scoring Method
-
-The final stock score combines machine learning predictions and factor-based ranking:
-
-```text
-Final Score
-=
-0.85 × LightGBM Score
-+
-0.15 × Factor Score
-```
-
-If the model is unavailable, a factor-based fallback ranking system is used.
-
-If factor data is unavailable, a pure momentum ranking system is applied.
+| Parameter            | Value                |
+| -------------------- | -------------------- |
+| Training Window      | 120 Trading Days     |
+| Prediction Horizon   | 20 Trading Days      |
+| Retraining Frequency | Every 5 Trading Days |
+| Learning Rate        | 0.04                 |
+| Maximum Depth        | 6                    |
+| Number of Leaves     | 63                   |
+| Boosting Rounds      | 80                   |
 
 ---
 
 ## Portfolio Construction
 
-### Universe
+### Stock Universe
 
-CSI 300 constituents
+CSI 300 Constituents
 
-### Selection
+### Selection Method
 
-Top 18 ranked stocks
+Stocks are ranked according to their final scores.
 
-### Weighting
+Final Score =
 
-Equal-weight allocation
+0.85 × LightGBM Prediction Score
 
-### Rebalancing
++ 0.15 × Factor-Based Score
 
-Daily evaluation with periodic model retraining
+The highest-ranked 18 stocks are selected for portfolio construction.
+
+### Weighting Scheme
+
+Equal-weight allocation.
 
 ---
 
 ## Risk Management
 
-### Stop Loss
+### Individual Stock Stop-Loss
 
-```text
-Sell if loss exceeds 2%
-```
+A position is liquidated when:
+
+Loss > 2%
 
 ### Market Trend Filter
 
-Portfolio exposure is adjusted according to CSI300 trend conditions:
+Portfolio exposure is dynamically adjusted according to the CSI300 trend.
 
-| Market Condition                  | Exposure |
-| --------------------------------- | -------- |
-| Above MA60                        | 100%     |
-| Below MA60 but Above MA120        | 85%      |
-| Below MA120                       | 65%      |
-| Below MA120 and Negative Momentum | 45%      |
+| Market Condition                   | Exposure |
+| ---------------------------------- | -------- |
+| Above MA60                         | 100%     |
+| Below MA60 but Above MA120         | 85%      |
+| Below MA120                        | 65%      |
+| Below MA120 with Negative Momentum | 45%      |
+
+This mechanism aims to reduce drawdowns during adverse market environments.
 
 ---
 
-## Requirements
+## Technical Stack
 
-* JoinQuant Platform
-* Python 3.x
-* pandas
-* numpy
+* Python
+* Pandas
+* NumPy
 * LightGBM
+* JoinQuant Platform
+
+---
+
+## Key Contributions
+
+* Constructed a compact Behavioral–Risk–Momentum factor framework.
+* Applied machine learning to forecast future excess returns.
+* Combined factor investing and nonlinear prediction techniques.
+* Developed an adaptive market-regime risk control mechanism.
+* Implemented a complete quantitative research and backtesting pipeline.
+
+---
+
+## Future Improvements
+
+Potential extensions include:
+
+* Feature importance analysis using SHAP
+* Dynamic factor weighting
+* Market state classification
+* Ensemble learning models
+* Northbound capital flow factors
+* Fundamental and ESG factor integration
+
+---
+
+## Author
+
+**Haoming Li**
+
+Financial Engineering
+
+Guangdong University of Foreign Studies
 
 ---
 
 ## Disclaimer
 
-This project is for educational and research purposes only.
+This project is intended for academic research and educational purposes only.
 
-Past performance does not guarantee future results. Users should conduct independent research and risk assessment before deploying any quantitative strategy in live trading.
-
----
-
-
+Past performance does not guarantee future results. All investment decisions should be made independently and at your own risk.
